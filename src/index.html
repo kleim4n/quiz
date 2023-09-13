@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .questions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .question {
+        width: 80%;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+      }
+      .question__title {
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .question__options {
+        display: flex;
+        flex-direction: column;
+      }
+      .question__option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .question__option input {
+        margin-right: 10px;
+      }
+      .result {
+        width: 80%;
+        margin: 20px auto;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      .correct {
+        background-color: #d4edda;
+      }
+      .incorrect {
+        background-color: #f8d7da;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      function getJsonQuestionsFromResource() {
+        //Deve carregar o json questions.json e retornar um array de objetos
+        let questions = [];
+        let request = new XMLHttpRequest();
+        request.open("GET", "../resource/questions.json", false);
+        request.send(null);
+        if (request.status === 200) {
+          questions = JSON.parse(request.responseText);
+        }
+        return questions;
+      }
+      let jsonQuestions = getJsonQuestionsFromResource();
+      let questions = document.createElement("div");
+      questions.setAttribute("class", "questions");
+      jsonQuestions.forEach((question, index) => {
+        let questionDiv = document.createElement("div");
+        questionDiv.classList.add("question");
+        questionDiv.classList.add("disabled");
+        questionDiv.setAttribute("id", `question-${question.id}`);
+        questionDiv.style.display = "none";
+        questionDiv.innerHTML = `
+      	<div class="question__title">
+      		${index + 1}. ${question.question}
+      	</div>
+      	<div class="question__options">
+      		${question.options
+            .map((option, index) => {
+              return `
+      				<div class="question__option">
+      					<input type="checkbox" name="question-${question.id}" id="question-${question.id}-${index}" value="${option}">
+      					<label for="question-${question.id}-${index}">${option}</label>
+      				</div>
+      			`;
+            })
+            .join("")}
+      	</div>
+      	<button class="check">Check answers (${
+          question.answers.length
+        } correct answers)</button>
+      `;
+        questions.appendChild(questionDiv);
+      });
+      document.body.appendChild(questions);
+      let buttonNewQuestion = document.createElement("button");
+      buttonNewQuestion.innerHTML = "New question";
+      buttonNewQuestion.addEventListener("click", () => {
+        let enabledQuestionDiv = document.querySelector(".enabled");
+        enabledQuestionDiv.style.display = "none";
+        enabledQuestionDiv.classList.remove("enabled");
+        enabledQuestionDiv.classList.remove("correct");
+        enabledQuestionDiv.classList.remove("incorrect");
+        enabledQuestionDiv.classList.add("disabled");
+        showRandomQuestion();
+      });
+      document.body.appendChild(buttonNewQuestion);
+      //check answers
+      function checkEnabledAnswers() {
+        let questionDiv = document.querySelector(".enabled");
+        let checkedAnswers = questionDiv.querySelectorAll(
+          "input[type=checkbox]:checked"
+        );
+        let correctAnswers = jsonQuestions.find(
+          (question) => question.id === parseInt(questionDiv.id.split("-")[1])
+        ).answers;
+        let correct = true;
+        checkedAnswers.forEach((checkedAnswer) => {
+          correct = correct && correctAnswers.includes(checkedAnswer.value);
+        });
+        questionDiv.classList.add(correct ? "correct" : "incorrect");
+      }
+      let checkButtons = document.querySelectorAll(".check");
+      checkButtons.forEach((checkButton) => {
+        checkButton.addEventListener("click", () => {
+          checkEnabledAnswers();
+        });
+      });
+      //mostra pergunta aleatoria
+      let questionDivs = document.querySelectorAll(".question");
+      function showRandomQuestion() {
+        let randomIndex = Math.floor(Math.random() * questionDivs.length);
+        questionDivs[randomIndex].style.display = "block";
+        questionDivs[randomIndex].classList.remove("disabled");
+        questionDivs[randomIndex].classList.add("enabled");
+      }
+      showRandomQuestion();
+    </script>
+  </body>
+</html>
