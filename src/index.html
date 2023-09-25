@@ -5,165 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quiz - Kleiman</title>
     <style>
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      .questions {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .question {
-        width: 80%;
-        margin-bottom: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        padding: 10px;
-      }
-      .question__title {
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      .question__options {
-        display: flex;
-        flex-direction: column;
-      }
-      .question__option {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px;
-      }
-      .question__option input {
-        margin-right: 10px;
-      }
-      .result {
-        width: 80%;
-        margin: 20px auto;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-      }
       .correct {
-        background-color: #d4edda;
+        background-color: #a6f5a6;
       }
-      .incorrect {
-        background-color: #f8d7da;
+      .wrong {
+        background-color: #f5a6a6;
       }
-      .disabled {
-        display: none;
+      #question-card {
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin: 20px;
       }
-      .enabled {
-        display: block;
+      #panel {
+        text-align: center;
       }
     </style>
   </head>
   <body>
+    <div id="question-card">
+      <h1 id="question-id"></h1>
+      <h2 id="question-body"></h2>
+      <div id="question-options"></div>
+    </div>
+    <div id="panel">
+      <button id="check-button">Check</button>
+      <button id="new-question-button">New question</button>
+    </div>
+    <script src="../resource/questions.js"></script>
+    <script src="../resource/answers.js"></script>
     <script>
-      //Carrega as perguntas do arquivo json
-      function getJsonQuestionsFromResource() {
-        let questions = [];
-        let request = new XMLHttpRequest();
-        request.open("GET", "../resource/questions.json", false);
-        request.send(null);
-        if (request.status === 200) {
-          questions = JSON.parse(request.responseText);
+      var questionIndex = 0;
+      function showQuestion() {
+        let question = questions[questionIndex];
+        document.getElementById("question-id").innerHTML = question.id;
+        document.getElementById("question-body").innerHTML = question.question;
+        let options = "";
+        for (let i = 0; i < question.options.length; i++) {
+          options += `<div class="question__option">
+            <input type="checkbox" id="option-${i}" />
+            <label for="option-${i}">${question.options[i]}</label>
+          </div>`;
         }
-        return questions;
+        document.getElementById("question-options").innerHTML = options;
       }
-      var jsonQuestions = getJsonQuestionsFromResource();
-      //Funções de eventos
-      function showRandomQuestion() {
-        let randomIndex = Math.floor(
-          Math.random() * document.querySelectorAll(".question").length
-        );
-        let questionDiv = document.querySelector(
-          `.question:nth-child(${randomIndex + 1})`
-        );
-        questionDiv.classList.remove("disabled");
-        questionDiv.classList.add("enabled");
+      function checkAnswer() {
+        let question = questions[questionIndex];
+        let correctAnswers = answers[questionIndex].correct;
+        let selectedAnswers = [];
+        document.getElementById("question-card").classList.remove("correct");
+        document.getElementById("question-card").classList.remove("wrong");
+        for (let i = 0; i < question.options.length; i++) {
+          let option = document.getElementById(`option-${i}`);
+          if (option.checked) {
+            selectedAnswers.push(i);
+          }
+        }
+        if (selectedAnswers.length != correctAnswers.length) {
+          document.getElementById("question-card").classList.add("wrong");
+          return;
+        }
+        for (let i = 0; i < selectedAnswers.length; i++) {
+          if (!correctAnswers.includes(selectedAnswers[i])) {
+            document.getElementById("question-card").classList.add("wrong");
+            return;
+          }
+        }
+        document.getElementById("question-card").classList.add("correct");
       }
-      function newQuestionEvent() {
-        let enabledQuestionDiv = document.querySelector(".enabled");
-        enabledQuestionDiv.classList.remove("enabled");
-        enabledQuestionDiv.classList.remove("correct");
-        enabledQuestionDiv.classList.remove("incorrect");
-        enabledQuestionDiv.classList.add("disabled");
-        showRandomQuestion();
-      }
-      function checkAnswersEvent() {
-        document.querySelector(".enabled").classList.remove("correct");
-        document.querySelector(".enabled").classList.remove("incorrect");
-        let enabledCheckedInputs = document.querySelectorAll(
-          ".enabled input:checked"
-        );
-        let result = [];
-        enabledCheckedInputs.forEach((input) => {
-          result.push(input.getAttribute("correct") === "true");
-        });
-        document
-          .querySelector(".enabled")
-          .classList.add(
-            result.every((value) => value === true) && result.length > 0
-              ? "correct"
-              : "incorrect"
-          );
-      }
-      //Cria os componentes html
-      const checkButtonHtml = () => {
-        return `<button class='check' type='button'>Check</button>`;
-      };
-      const newQuestionButtonHtml = () => {
-        return `<button class="new-question" type="button">New question</button>`;
-      };
-      const questionHtml = (question) => {
-        return `
-          <div class="question disabled">
-            <div class="question__title">
-              ${question.question}
-            </div>
-            <div class="question__options">
-              ${question.options
-                .map((option, index) => {
-                  return `
-                <div class="question__option">
-                  <input type="checkbox" name="question-${
-                    question.id
-                  }" id="question-${
-                    question.id
-                  }-${index}" value="${option}" correct="${
-                    question.answers.includes(option) ? "true" : "false"
-                  }" />
-                  <label for="question-${
-                    question.id
-                  }-${index}">${option}</label>
-                </div>
-              `;
-                })
-                .join("")}
-            </div>
-          </div>
-        `;
-      };
-      const questionsCardHtml = (questions) => {
-        return `
-          <div class="questions">
-            ${questions.map((question) => questionHtml(question)).join("")}
-            ${checkButtonHtml()}
-            ${newQuestionButtonHtml()}
-          </div>
-        `;
-      };
-      //Adiciona os componentes html na pagina
-      document.body.innerHTML = questionsCardHtml(jsonQuestions);
-      //Adiciona os eventos
       document
-        .querySelector(".check")
-        .addEventListener("click", checkAnswersEvent);
+        .getElementById("check-button")
+        .addEventListener("click", checkAnswer);
+      function nextQuestion() {
+        document.getElementById("question-card").classList.remove("correct");
+        document.getElementById("question-card").classList.remove("wrong");
+        questionIndex = Math.floor(Math.random() * questions.length);
+        if (questionIndex >= questions.length) {
+          questionIndex = 0;
+        }
+        showQuestion();
+      }
       document
-        .querySelector(".new-question")
-        .addEventListener("click", newQuestionEvent);
-      //Mostra a primeira pergunta aleatoria
-      showRandomQuestion();
+        .getElementById("new-question-button")
+        .addEventListener("click", nextQuestion);
+      showQuestion();
     </script>
   </body>
 </html>
