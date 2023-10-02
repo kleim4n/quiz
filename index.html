@@ -11,6 +11,9 @@
       .wrong {
         background-color: #f5a6a6;
       }
+      .mistake {
+        background-color: #f5f5a6;
+      }
       #question-card {
         border-radius: 5px;
         border: 1px solid #ccc;
@@ -54,6 +57,7 @@
         let correctAnswers = answers[questionIndex].correct;
         let selectedAnswers = [];
         document.getElementById("question-card").classList.remove("correct");
+        document.getElementById("question-card").classList.remove("mistake");
         document.getElementById("question-card").classList.remove("wrong");
         for (let i = 0; i < question.options.length; i++) {
           let option = document.getElementById(`option-${i}`);
@@ -62,7 +66,7 @@
           }
         }
         if (selectedAnswers.length != correctAnswers.length) {
-          document.getElementById("question-card").classList.add("wrong");
+          document.getElementById("question-card").classList.add("mistake");
           return;
         }
         for (let i = 0; i < selectedAnswers.length; i++) {
